@@ -25,7 +25,7 @@
 """
 This module provides classes that describe banks of waveforms
 """
-import types, numpy, logging
+import types, numpy, logging, os
 import pycbc.waveform
 from pycbc.types import zeros
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
@@ -68,6 +68,11 @@ class BaseFilterBank(object):
     about elements of an xml template bank.
     """
     def __init__(self, filename, approximant=None, **kwds):
+
+        # precede filename with PROJECT_DIR path if set in environment (for E@H)
+        if os.environ.get("PROJECT_DIR", None):
+            filename = os.environ.get("PROJECT_DIR", ".") + "/" + filename.replace('\\','/')
+
         self.indoc = ligolw_utils.load_filename(
             filename, False, contenthandler=LIGOLWContentHandler)
         self.table = table.get_table(
