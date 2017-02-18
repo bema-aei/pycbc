@@ -68,9 +68,9 @@ run_analysis=true
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
     # example: WORKSPACE='/Users/jenkins/workspace/workspace/EAH_PyCBC_Master/label/OSX107'
-    test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=cygwin64-qemu # moss-cygwin64
+    test ".$CYGWIN_HOST" = "."      && CYGWIN_HOST=moss-cygwin64
     test ".$CYGWIN_HOST_USER" = "." && CYGWIN_HOST_USER=jenkins
-    test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=22 # 2222
+    test ".$CYGWIN_HOST_PORT" = "." && CYGWIN_HOST_PORT=2222
     echo -e "\\n\\n>> [`date`] running remotely at $CYGWIN_HOST_USER@$CYGWIN_HOST:$CYGWIN_HOST_PORT"
     echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
     unset WORKSPACE # avoid endless recoursion
