@@ -134,6 +134,7 @@ elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     build_freetype=false
     build_gsl=false
     build_swig=false
+    lalsuite_branch=57d3cd1
     pyinstaller_version=9d0e0ad4
     pyinstaller21_hacks=true
     patch_pyinstaller_bootloader=false
