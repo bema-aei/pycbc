@@ -260,7 +260,7 @@ class MatchedFilterControl(object):
         if len(idx) == 0:
             return [], [], [], [], []
 
-        logging.info("%s points above threshold" % str(len(idx)))
+        logging.debug("%s points above threshold" % str(len(idx)))
         return self.snr_mem, norm, self.corr_mem, idx, snrv
 
     def full_matched_filter_and_cluster_fc(self, segnum, template_norm, window):
@@ -301,7 +301,7 @@ class MatchedFilterControl(object):
         if len(idx) == 0:
             return [], [], [], [], []
 
-        logging.info("%s points above threshold" % str(len(idx)))
+        logging.debug("%s points above threshold" % str(len(idx)))
         return self.snr_mem, norm, self.corr_mem, idx, snrv
 
     def full_matched_filter_thresh_only(self, segnum, template_norm, window):
@@ -342,7 +342,7 @@ class MatchedFilterControl(object):
         if len(idx) == 0:
             return [], [], [], [], []
 
-        logging.info("%s points above threshold" % str(len(idx)))
+        logging.debug("%s points above threshold" % str(len(idx)))
         return self.snr_mem, norm, self.corr_mem, idx, snrv
 
     def heirarchical_matched_filter_and_cluster(self, segnum, template_norm, window):
@@ -396,7 +396,7 @@ class MatchedFilterControl(object):
             return [], None, [], [], []
 
         idx_red, _ = events.cluster_reduce(idx_red, snrv_red, window / self.downsample_factor)
-        logging.info("%s points above threshold at reduced resolution"\
+        logging.debug("%s points above threshold at reduced resolution"\
                       %(str(len(idx_red)),))
 
         # The fancy upsampling is here
@@ -559,7 +559,7 @@ class MatchedFilterSkyMaxControl(object):
 
         if len(idx) == 0:
             return [], 0, 0, [], [], [], [], 0, 0, 0
-        logging.info("%s points above threshold" % str(len(idx)))            
+        logging.debug("%s points above threshold" % str(len(idx)))
  
 
         idx, snrv = events.cluster_reduce(idx, snrv, window)

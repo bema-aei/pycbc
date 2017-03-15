@@ -667,7 +667,7 @@ class FilterBank(TemplateBank):
         else:
             f_low = self.f_lower
 
-        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
+        logging.debug('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
         poke  = tempout.data
@@ -772,7 +772,7 @@ class FilterBankSkyMax(TemplateBank):
         else:
             f_low = self.f_lower
 
-        logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
+        logging.debug('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???
         poke1 = tempoutplus.data

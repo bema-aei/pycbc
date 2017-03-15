@@ -173,6 +173,6 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                 chisq[i] = 1
             else:
                 chisq[i] /= dof
-            logging.info('Found chisq %s', chisq[i])
+            logging.debug('Found chisq %s', chisq[i])
         return chisq
 
