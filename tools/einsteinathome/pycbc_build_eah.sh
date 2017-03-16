@@ -572,6 +572,10 @@ else # if $BUILDDIRNAME-preinst.tgz
         else
             ./configure CFLAGS="$CFLAGS $fftw_cflags" $shared $static --prefix="$PREFIX" --enable-float --enable-sse $fftw_flags
         fi
+        make
+        make install
+        cd ..
+        $cleanup && rm -rf $p
     fi
 
     # ZLIB
