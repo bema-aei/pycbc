@@ -49,9 +49,7 @@ parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
 parser.add_argument('--version', action=pycbc.version.Version)
-parser.add_argument("-V", "--verbose", action="store_true",
-                  help="print extra debugging information", default=False )
-parser.add_argument("--info", action="store_true",
+parser.add_argument("-V", "--verbose", action="count",
                   help="print extra debugging information", default=False )
 parser.add_argument("--update-progress",
                   help="updates a file 'progress.txt' with a value 0 .. 1.0 when this amount of (filtering) progress was made",
@@ -189,10 +187,7 @@ fft.verify_fft_options(opt,parser)
 pycbc.opt.verify_optimization_options(opt, parser)
 pycbc.weave.verify_weave_options(opt, parser)
 
-if opt.info:
-    pycbc.init_logging(20) # log level info
-else:
-    pycbc.init_logging(opt.verbose)
+pycbc.init_logging(min(30 - 10 * opt.verbose, 0))
 
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(opt)
 ctx = scheme.from_cli(opt)
