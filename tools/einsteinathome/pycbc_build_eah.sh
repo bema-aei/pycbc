@@ -1278,11 +1278,7 @@ if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
 fi
 
 n_runs=${#bank_array[@]}
-if $silent_build ; then
-    verbose=--info
-else
-    verbose=--verbose
-fi
+
 for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
@@ -1330,7 +1326,7 @@ do
       --frame-files "$frames" \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
-      $verbose 2>&1
+      --verbose 2>&1
 done
 
 # test for GW150914
