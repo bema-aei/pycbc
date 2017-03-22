@@ -160,6 +160,7 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     libgfortran=libgfortran.dylib
     fftw_cflags="-Wa,-q"
     build_framecpp=true
+    lalsuite_branch=b22fb590
     pyinstaller_version=9d0e0ad4
     pyinstaller21_hacks=true
     appendix="_OSX64"
