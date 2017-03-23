@@ -68,7 +68,6 @@ build_gsl=true
 build_swig=true
 build_pcre=false
 build_fftw=true
-build_framecpp=false
 build_preinst_before_lalsuite=true
 build_subprocess32=false
 build_hdf5=true
@@ -159,7 +158,7 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     gcc_path="/opt/local/bin"
     libgfortran=libgfortran.dylib
     fftw_cflags="-Wa,-q"
-    build_framecpp=true
+    framecpp_version=2.5.5 #2.4.2
     pyinstaller_version=9d0e0ad4
     pyinstaller21_hacks=true
     appendix="_OSX64"
@@ -655,7 +654,7 @@ Libs: -L${libdir} -lhdf5' |
     echo -e "\\n\\n>> [`date`] pip install --upgrade distribute" >&3
     pip install --upgrade distribute
 
-    if $build_framecpp; then
+    if [ "v$framecpp_version" = "v2.4.2" ]; then
 
         # FrameCPP
         p=ldas-tools-2.4.2
@@ -668,6 +667,31 @@ Libs: -L${libdir} -lhdf5' |
         sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
         make
         make -k install || true
+        cd ..
+        $cleanup && rm -rf $p
+
+    elif [ "v$framecpp_version" = "v2.5.5" ]; then
+
+        # FrameCPP
+        p=ldas-tools-al-2.5.6
+        echo -e "\\n\\n>> [`date`] building $p" >&3
+        test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit --disable-warnings-as-errors $shared $static --prefix="$PREFIX" # --disable-cxx11
+        make
+        make install
+        cd ..
+        $cleanup && rm -rf $p
+        p=ldas-tools-framecpp-2.5.5
+        test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
+        rm -rf $p
+        tar -xzf $p.tar.gz
+        cd $p
+        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit --disable-warnings-as-errors $shared $static --prefix="$PREFIX" # --disable-cxx11
+        make
+        make install
         cd ..
         $cleanup && rm -rf $p
 
@@ -853,7 +877,7 @@ EOF
              s/mv -f swiglal_python/mv -f cygswiglal_python/;' gnuscripts/lalsuite_swig.am
 	shared="$shared --enable-win32-dll"
     fi
-    if $build_framecpp; then
+    if [ "v$framecpp_version" != "v" ]; then
 	shared="$shared --enable-framec --disable-framel"
     fi
     echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
@@ -1291,7 +1315,7 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
-if $build_framecpp; then
+if [ "v$framecpp_version" != "v" ]; then
     export LAL_FRAME_LIBRARY=FrameC
 else
     export LAL_FRAME_LIBRARY=FrameL
