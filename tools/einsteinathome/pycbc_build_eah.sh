@@ -160,7 +160,6 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     libgfortran=libgfortran.dylib
     fftw_cflags="-Wa,-q"
     build_framecpp=true
-    lalsuite_branch=30cb5f21d
     pyinstaller_version=9d0e0ad4
     pyinstaller21_hacks=true
     appendix="_OSX64"
@@ -785,7 +784,36 @@ else
     fi
     echo -e ">> [`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`" >&3
     sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
-    if $build_dlls; then
+    if [ ".$appendix" = "._OSX64" ]; then
+	git apply <<'EOF' || true
+From e76ed08f227e6118fb5049bf424483aa364c1064 Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Thu, 23 Mar 2017 13:19:26 +0100
+Subject: [PATCH] Revert "SWIG: add Python library to linker flags"
+
+This reverts commit 1e46db89410c6afa9b4b57bf4fab610b7879650c.
+---
+ gnuscripts/lalsuite_swig.m4 | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/gnuscripts/lalsuite_swig.m4 b/gnuscripts/lalsuite_swig.m4
+index 93ec39e34b..831ff4a252 100644
+--- a/gnuscripts/lalsuite_swig.m4
++++ b/gnuscripts/lalsuite_swig.m4
+@@ -493,8 +493,6 @@ sys.stdout.write(' -L' + cfg.get_python_lib())
+ sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
+ sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
+ sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
+-sys.stdout.write(' -lpython' + cfg.get_config_var('VERSION'))
+-sys.stdout.write(' ' + cfg.get_config_var('LIBS'))
+ EOD`]
+     AS_IF([test $? -ne 0],[
+       AC_MSG_ERROR([could not determine Python linker flags])
+-- 
+2.12.1
+
+EOF
+    elif $build_dlls; then
 	git apply <<'EOF' || true
 From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
 From: Karl Wette <karl.wette@ligo.org>
