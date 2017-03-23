@@ -969,6 +969,10 @@ hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
 
+# TEST
+echo -e "\\n\\n>> [`date`] testing local executable" >&3
+$PREFIX/bin/pycbc_inspiral --help
+
 if $silent_build ; then
     # close stdin and stdout
     exec 1>&-
@@ -1100,10 +1104,7 @@ echo -e "\\n\\n>> [`date`] ENVIRONMENT ..." >&3
 env
 echo -e "... ENVIRONMENT"
 
-# TEST
-echo -e "\\n\\n>> [`date`] testing local executable" >&3
 cd $PREFIX
-./bin/pycbc_inspiral --help
 
 # BUNDLE DIR
 echo -e "\\n\\n>> [`date`] building pyinstaller spec" >&3
