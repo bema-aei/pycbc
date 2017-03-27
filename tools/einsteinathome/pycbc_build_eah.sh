@@ -159,8 +159,6 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     libgfortran=libgfortran.dylib
     fftw_cflags="-Wa,-q"
     framecpp_version=2.5.5 #2.4.2
-    pyinstaller_version=9d0e0ad4
-    pyinstaller21_hacks=true
     appendix="_OSX64"
 elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
