@@ -867,7 +867,6 @@ EOF
 	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
 	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
 	done
-	sed -i~ 's/^cs_gamma_la_LDFLAGS = .*/& -no-undefined -lpython2.7/' lalburst/python/lalburst/Makefile.am
 	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/;
              s/\(swiglal_python_la_LIBADD = .*\)$/\1 -lpython2.7/;
              s/swiglal_python\.la/libswiglal_python.la/g;
@@ -886,8 +885,7 @@ EOF
     cd lalsuite-build
     echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
-	--enable-swig-python --disable-lalxml --disable-laldetchar --disable-lalstochastic --disable-lalinference \
-	--disable-lalapps --disable-pylal
+	--disable-all-lal --enable-lalframe --enable-lalmetaio --enable-lalsimulation --enable-lalinspiral --enable-swig-python
     if $build_dlls; then
 	echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
