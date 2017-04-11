@@ -824,8 +824,10 @@ else
     if [ "v$framecpp_version" != "v" ]; then
         shared="$shared --enable-framec --disable-framel"
     fi
-    echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
-    ./00boot
+    if [ ! -x configure ]; then
+        echo -e "\\n\\n>> [`date`] Creating lalsuite configure scripts" >&3
+        ./00boot
+    fi
     cd ..
     rm -rf lalsuite-build
     mkdir lalsuite-build
