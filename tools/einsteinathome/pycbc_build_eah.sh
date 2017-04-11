@@ -68,6 +68,7 @@ build_gsl=true
 build_swig=true
 build_pcre=false
 build_fftw=true
+build_framecpp=false
 build_preinst_before_lalsuite=true
 build_subprocess32=false
 build_hdf5=true
@@ -158,7 +159,7 @@ elif test "`uname -s`" = "Darwin" ; then # OSX
     gcc_path="/opt/local/bin"
     libgfortran=libgfortran.dylib
     fftw_cflags="-Wa,-q"
-    framecpp_version=2.5.5 #2.4.2
+    build_framecpp=true
     appendix="_OSX64"
 elif uname -s | grep ^CYGWIN >/dev/null; then # Cygwin (Windows)
     echo -e "\\n\\n>> [`date`] Using Cygwin settings"
@@ -652,23 +653,7 @@ Libs: -L${libdir} -lhdf5' |
     echo -e "\\n\\n>> [`date`] pip install --upgrade distribute" >&3
     pip install --upgrade distribute
 
-    if [ "v$framecpp_version" = "v2.4.2" ]; then
-
-        # FrameCPP
-        p=ldas-tools-2.4.2
-        echo -e "\\n\\n>> [`date`] building $p" >&3
-        test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
-        rm -rf $p
-        tar -xzf $p.tar.gz
-        cd $p
-        ./configure --disable-latex --disable-swig --disable-python --disable-tcl --enable-64bit $shared $static --prefix="$PREFIX" # --disable-cxx11
-        sed -i~ '/^CXXSTD[A-Z]*FLAGS=/d' ./libraries/ldastoolsal/ldastoolsal*.pc
-        make
-        make -k install || true
-        cd ..
-        $cleanup && rm -rf $p
-
-    elif [ "v$framecpp_version" = "v2.5.5" ]; then
+    if $build_framecpp; then
 
         # FrameCPP
         p=ldas-tools-al-2.5.6
@@ -822,7 +807,7 @@ else
         export EXTRA_SWIG_PYTHON_LDFLAGS="-no-undefined -lpython2.7"
     fi
     # if we are using FrameCPP, enable it (and disable FrameLib) for LALFrame
-    if [ "v$framecpp_version" != "v" ]; then
+    if $build_framecpp; then
         shared="$shared --enable-framec --disable-framel"
     fi
     if [ ! -x configure ]; then
@@ -1261,7 +1246,7 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
-if [ "v$framecpp_version" != "v" ]; then
+if $build_framecpp; then
     export LAL_FRAME_LIBRARY=FrameC
 else
     export LAL_FRAME_LIBRARY=FrameL
