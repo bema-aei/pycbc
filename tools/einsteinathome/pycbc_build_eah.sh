@@ -832,7 +832,10 @@ else
     # only helpful if something goes wrong, normally not needed
     # sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
-	git apply <<'EOF' || true
+      lalsuite_min_version=27676b
+      # make sure LALSuite is the minimum required version before applying new patches
+      if ! git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+        git apply <<'EOF' || true
 From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
 From: Karl Wette <karl.wette@ligo.org>
 Date: Mon, 6 Mar 2017 20:18:07 +0100
@@ -860,12 +863,206 @@ index 831ff4a..2a2695e 100644
 2.7.4
 
 EOF
-	fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
-	    sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
-	done
-	sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/' gnuscripts/lalsuite_swig.am
+        fgrep -l lib_LTLIBRARIES `find . -name Makefile.am` | while read i; do
+            sed -n 's/.*lib_LTLIBRARIES *= *\(.*\).la/\1_la_LDFLAGS += -no-undefined/p' $i >> $i
+        done
+        sed -i~ 's/\(swiglal_python_la_LDFLAGS = .*\)$/\1 -no-undefined/' gnuscripts/lalsuite_swig.am
         rm -f configure # force running ./00boot if lalsuite was patched before 'make' triggers it
         shared="$shared --enable-win32-dll"
+      else
+        echo -e "\\n\\n>> [`date`] Patching lalsuite" >&3
+        lalsuite_min_version=89f16f
+        if git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+            echo "INFO: LALSuite does contain patch $lalsuite_min_version" >&3
+        else
+            git apply <<'EOF' && rm -f configure || echo "WARNING: patch $lalsuite_min_version failed" >&2
+From 89f16f7d45f51cfee90fc1ae70e5445999ea9690 Mon Sep 17 00:00:00 2001
+From: Karl Wette <karl.wette@ligo.org>
+Date: Tue, 14 Feb 2017 17:20:37 +0100
+Subject: [PATCH] Do not use $(..._la_LIBADD) to link against external
+ libraries
+
+- $(..._la_LIBADD) appears late in the libtool linker command, after
+  $(..._la_LDFLAGS); so any -L options in $(..._la_LDFLAGS) will appear
+  before any .la library being linked in $(..._la_LIBADD). This can
+  prevent the correct library being linked, e.g. if $(..._la_LDFLAGS)
+  contains -L/usr/lib (e.g. from an external library .pc) and an
+  old version of the .la library is install in /usr/lib
+- $(..._la_LDFLAGS) should always be ordered:
+    ..._la_LDFLAGS = lib.la... $(AM_LDFLAGS) $(..._LDFLAGS) $(..._LIBS)
+- $(..._la_LIBADD) should only be used to link against libraries added
+  to $(noinst_LTLIBRARIES) in the same Makefile, so automake/libtool
+  knows these are local convenience libraries which are never relinked
+- Refs #5137
+---
+ gnuscripts/lalsuite_swig.am                           | 6 ++----
+ lal/src/Makefile.am                                   | 7 +++----
+ lal/src/support/Makefile.am                           | 3 +--
+ lalburst/python/lalburst/Makefile.am                  | 3 +--
+ lalinference/python/lalinference/bayestar/Makefile.am | 9 +++------
+ lalinference/src/Makefile.am                          | 3 +--
+ 6 files changed, 11 insertions(+), 20 deletions(-)
+
+diff --git a/gnuscripts/lalsuite_swig.am b/gnuscripts/lalsuite_swig.am
+index af56a3d414..4698d1b1b2 100644
+--- a/gnuscripts/lalsuite_swig.am
++++ b/gnuscripts/lalsuite_swig.am
+@@ -133,8 +133,7 @@ nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
+ swiglal_octave_la_SOURCES = SWIGTest.c
+ swiglal_octave_la_CPPFLAGS = $(SWIG_OCTAVE_CPPFLAGS_IOCTAVE) $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS)
+ swiglal_octave_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
+-swiglal_octave_la_LDFLAGS = $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
+-swiglal_octave_la_LIBADD = $(LDADD)
++swiglal_octave_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_OCTAVE_LDFLAGS)
+ swiglal_octave_la_LIBTOOLFLAGS = $(swig_libtoolflags)
+ 
+ if AMDEP
+@@ -189,8 +188,7 @@ nodist_swiglal_python_la_SOURCES = swiglal_python.c
+ swiglal_python_la_SOURCES = SWIGTest.c
+ swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
+ swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS)
+-swiglal_python_la_LDFLAGS = $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
+-swiglal_python_la_LIBADD = $(LDADD)
++swiglal_python_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
+ swiglal_python_la_LIBTOOLFLAGS = $(swig_libtoolflags)
+ 
+ if AMDEP
+diff --git a/lal/src/Makefile.am b/lal/src/Makefile.am
+index 5f780263e1..0a05d4504b 100644
+--- a/lal/src/Makefile.am
++++ b/lal/src/Makefile.am
+@@ -37,7 +37,7 @@ nodist_liblal_la_SOURCES = \
+ 	LALVCSInfo.c \
+ 	$(END_OF_LIST)
+ 
+-liblal_la_DEPENDENCIES = \
++EXTRA_liblal_la_DEPENDENCIES = \
+ 	std/libstd.la \
+ 	tools/libtools.la \
+ 	factories/libfactories.la \
+@@ -52,8 +52,7 @@ liblal_la_DEPENDENCIES = \
+ 	noisemodels/libnoisemodels.la \
+ 	$(END_OF_LIST)
+ 
+-liblal_la_LIBADD = $(liblal_la_DEPENDENCIES)
+-liblal_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
++liblal_la_LDFLAGS = $(EXTRA_liblal_la_DEPENDENCIES) $(AM_LDFLAGS) -version-info $(LIBVERSION)
+ 
+ EXTRA_DIST = \
+ 	config.h.in \
+@@ -65,7 +64,7 @@ DISTCLEANFILES = config.h
+ vcs_build_info_source = LALVCSInfo.c
+ vcs_info_sources = LALVCSInfoHeader.h
+ build_info_source = LALBuildInfoHeader.h
+-build_info_dependencies = $(liblal_la_DEPENDENCIES)
++build_info_dependencies = $(EXTRA_liblal_la_DEPENDENCIES)
+ 
+ LDADD = liblal.la
+ 
+diff --git a/lal/src/support/Makefile.am b/lal/src/support/Makefile.am
+index fbd3e8847d..1af2274fb4 100644
+--- a/lal/src/support/Makefile.am
++++ b/lal/src/support/Makefile.am
+@@ -60,10 +60,9 @@ liblalsupport_la_SOURCES = \
+ 	LALgetopt.c \
+ 	$(END_OF_LIST)
+ 
+-liblalsupport_la_LIBADD = ../liblal.la $(ZLIB_LIBS) $(HDF5_LIBS)
+ liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(HDF5_CFLAGS)
+ liblalsupport_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS) $(PAGER_CPPFLAGS)
+-liblalsupport_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) -version-info $(LIBVERSION_SUPPORT)
++liblalsupport_la_LDFLAGS = ../liblal.la $(AM_LDFLAGS) $(HDF5_LDFLAGS) $(ZLIB_LIBS) $(HDF5_LIBS) -version-info $(LIBVERSION_SUPPORT)
+ 
+ noinst_HEADERS = \
+ 	H5FileIOArrayHL_source.c \
+-- 
+2.11.0
+
+EOF
+        fi
+        lalsuite_min_version=9f72f4
+        if git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+            echo "INFO: LALSuite does contain patch $lalsuite_min_version" >&3
+        else
+            git apply <<'EOF' && rm -f configure || echo "WARNING: patch $lalsuite_min_version failed" >&2
+From 9f72f41176cfb14b5891cc88e6583230331b80e6 Mon Sep 17 00:00:00 2001
+From: Bernd Machenschalk <bernd.machenschalk@ligo.org>
+Date: Thu, 30 Mar 2017 09:28:06 +0200
+Subject: [PATCH] SWIG: add EXTRA_SWIG_PYTHON_LDFLAGS flags
+
+- helps build on Cygwin better than 1e46db89
+- refs #5380
+---
+ gnuscripts/lalsuite_swig.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gnuscripts/lalsuite_swig.am b/gnuscripts/lalsuite_swig.am
+index 4698d1b1b2..24f51cb364 100644
+--- a/gnuscripts/lalsuite_swig.am
++++ b/gnuscripts/lalsuite_swig.am
+@@ -188,7 +188,7 @@ nodist_swiglal_python_la_SOURCES = swiglal_python.c
+ swiglal_python_la_SOURCES = SWIGTest.c
+ swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
+ swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS)
+-swiglal_python_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS)
++swiglal_python_la_LDFLAGS = $(LDADD) $(swig_ldflags) $(SWIG_PYTHON_LDFLAGS) $(EXTRA_SWIG_PYTHON_LDFLAGS)
+ swiglal_python_la_LIBTOOLFLAGS = $(swig_libtoolflags)
+ 
+ if AMDEP
+-- 
+2.11.0
+
+EOF
+        fi
+        lalsuite_min_version=099ecd
+        if git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+            echo "INFO: LALSuite does contain POSTCONFIG_LDFLAGS" >&3
+        else
+            git apply <<'EOF'
+From 35e9a5759879c6a71661623d28270ec9f7500ef8 Mon Sep 17 00:00:00 2001
+From: Karl Wette <karl.wette@ligo.org>
+Date: Tue, 11 Apr 2017 13:59:04 +0200
+Subject: [PATCH] lalsuite_build.m4: add POSTCONFIG_...FLAGS variables
+
+- extra values for user variables to be added after configuration
+- refs #5433
+---
+ gnuscripts/lalsuite_build.m4 | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/gnuscripts/lalsuite_build.m4 b/gnuscripts/lalsuite_build.m4
+index 23a0d45..ffed298 100644
+--- a/gnuscripts/lalsuite_build.m4
++++ b/gnuscripts/lalsuite_build.m4
+@@ -44,6 +44,11 @@ AC_DEFUN([AC_OUTPUT],[
+     AC_SUBST(AM_[]uvar,"${AM_[]uvar} ${sys_[]uvar}")
+     uvar="${uvar_prefix[]uvar}"
+   ])
++  # append extra values for user variables to be added after configuration
++  m4_foreach_w([uvar],uvar_list,[
++    AC_ARG_VAR([POSTCONFIG_]uvar,[Extra ]uvar[ to be added after configuration])
++    uvar="${uvar} ${POSTCONFIG_[]uvar}"
++  ])
+   # call original AC_OUTPUT
+   lalsuite_AC_OUTPUT
+ ])
+-- 
+2.7.4
+
+EOF
+            if [ $? -ne 0 ]; then
+                echo "WARNING: patch 35e9a575 failed" >&2
+                echo "ERROR: LALSuite does not contain POSTCONFIG_LDFLAGS, can't build" >&2
+                exit 1
+            else
+                rm -f configure
+            fi
+        fi
+        # configure with --enable-win32-dll
+        shared="$shared --enable-win32-dll"
+        export EXTRA_SWIG_PYTHON_LDFLAGS="-no-undefined -lpython2.7"
+        export POSTCONFIG_LDFLAGS="-no-undefined"
+      fi
     fi
     # if we are using FrameCPP, enable it (and disable FrameLib) for LALFrame
     if $build_framecpp; then
