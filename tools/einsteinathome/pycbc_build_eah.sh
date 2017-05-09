@@ -832,9 +832,10 @@ else
     # only helpful if something goes wrong, normally not needed
     # sed -i~ s/func__fatal_error/func_fatal_error/ */gnuscripts/ltmain.sh
     if $build_dlls; then
+      lalsuite_commits=`git log --pretty=oneline --abbrev-commit|egrep '^27676b|^89f16f|^9f72f4|^099ecd'||true`
       lalsuite_min_version=27676b
       # make sure LALSuite is the minimum required version before applying new patches
-      if ! git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+      if ! echo "$lalsuite_commits"|grep "^$lalsuite_min_version" >/dev/null; then
         git apply <<'EOF' || true
 From accb37091abbc8d8776edfb3484259f6059c4e25 Mon Sep 17 00:00:00 2001
 From: Karl Wette <karl.wette@ligo.org>
@@ -872,7 +873,7 @@ EOF
       else
         echo -e "\\n\\n>> [`date`] Patching lalsuite" >&3
         lalsuite_min_version=89f16f
-        if git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+        if echo "$lalsuite_commits"|grep "^$lalsuite_min_version" >/dev/null; then
             echo "INFO: LALSuite does contain patch $lalsuite_min_version" >&3
         else
             git apply <<'EOF' && rm -f configure || echo "WARNING: patch $lalsuite_min_version failed" >&2
@@ -981,7 +982,7 @@ index fbd3e8847d..1af2274fb4 100644
 EOF
         fi
         lalsuite_min_version=9f72f4
-        if git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+        if echo "$lalsuite_commits"|grep "^$lalsuite_min_version" >/dev/null; then
             echo "INFO: LALSuite does contain patch $lalsuite_min_version" >&3
         else
             git apply <<'EOF' && rm -f configure || echo "WARNING: patch $lalsuite_min_version failed" >&2
@@ -1015,7 +1016,7 @@ index 4698d1b1b2..24f51cb364 100644
 EOF
         fi
         lalsuite_min_version=099ecd
-        if git log --pretty=oneline --abbrev-commit|grep "^$lalsuite_min_version" >/dev/null; then
+        if echo "$lalsuite_commits"|grep "^$lalsuite_min_version" >/dev/null; then
             echo "INFO: LALSuite does contain POSTCONFIG_LDFLAGS" >&3
         else
             git apply <<'EOF'
