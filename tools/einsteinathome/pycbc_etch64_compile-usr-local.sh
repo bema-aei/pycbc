@@ -87,11 +87,13 @@ for url in `echo "
   $gnu/gcc/gcc-$GCC/gcc-$GCC.tar.bz2
   http://www.aei.uni-hannover.de/~bema/zlib-1.2.6.tar.gz
   http://www.aei.uni-hannover.de/~bema/jre-6u45-linux-x64.bin
+  http://www.aei.uni-hannover.de/~bema/git-lfs-linux-amd64-2.4.0.tar.gz
   http://www.multiprecision.org/mpc/download/mpc-0.9.tar.gz
   http://pkgconfig.freedesktop.org/releases/pkg-config-0.23.tar.gz
   http://www.python.org/ftp/python/2.7.10/Python-2.7.10.tgz
   https://www.kernel.org/pub/software/scm/git/git-1.9.5.tar.gz
   https://curl.haxx.se/download/curl-7.47.1.tar.gz
+  https://www.openssl.org/source/openssl-1.0.2n.tar.gz
 "` ; do
   test -r `echo $url | sed 's%.*/%%'` ||
   wget --no-check-certificate --passive-ftp "$url" || exit
@@ -102,16 +104,33 @@ compile_tar_gz autoconf-2.63
 compile_tar_gz automake-1.11
 compile_tar_gz libtool-1.5.8
 compile_tar_gz pkg-config-0.23
+
+# build a recent version of openssl to be used with curl and git
+tar -xzvf openssl-1.0.2n.tar.gz
+cd openssl-1.0.2n
+./config shared -fPIC --prefix=$PREFIX
+make && make install
+cd ..
+rm -rf openssl-1.0.2n
+
 compile_tar_gz curl-7.47.1 "--with-ssl"
 
 tar -xzvf git-1.9.5.tar.gz
 cd git-1.9.5
 make configure
-./configure --prefix=$PREFIX --with-tcltk
+./configure CPPFLAGS=-I$PREFIX/include LDFLAGS=-L$PREFIX/lib --prefix=$PREFIX --with-tcltk --with-curl=$PREFIX --with-ssl=$PREFIX --with-crypto=$PREFIX
 make && make install
 cd ..
 rm -rf git-1.9.5
 
+# install git-lfs e.g. for recent LALSuite
+tar xzvf git-lfs-linux-amd64-2.4.0.tar.gz
+cd git-lfs-2.3.4
+./install.sh
+cd ..
+rm -rf git-lfs-2.3.4
+
+# build a new gcc
 compile_tar_gz gmp-4.3.2 "--build=`gcc -dumpmachine`"
 compile_tar_gz mpfr-2.4.2 "--with-gmp=$PREFIX"
 compile_tar_gz mpc-0.9 "--with-gmp=$PREFIX" "--with-mpfr=$PREFIX"
@@ -120,6 +139,8 @@ compile_gcc $GCC "--with-gmp=$PREFIX" "--with-mpfr=$PREFIX" "--with-mpc=$PREFIX"
 # "--target=`gcc -dumpmachine`" --disable-multilib --with-multilib-list=m64
 ( cd $PREFIX/bin && for i in gcc g++ gfortran; do rm -f $i && ln -s $i-$GCC $i; done )
 
+# Note: this global Python installation is mainly for a LALSuite build independent of PyCBC
+# for PyCBC a local version of Python wil be compiled in userspace
 rm -f Python-2.7.10.tar.gz
 ln -s Python-2.7.10.tgz Python-2.7.10.tar.gz
 compile_tar_gz Python-2.7.10 --enable-shared
@@ -127,6 +148,7 @@ python -m ensurepip
 pip install --upgrade pip
 pip install --trusted-host pypi.python.org virtualenv
 
+# install JRE for use as a Jenkins build slave
 p=$PWD/jre-6u45-linux-x64.bin
 chmod +x $p
 mkdir -p /opt
